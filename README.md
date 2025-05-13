@@ -1,4 +1,10 @@
 # cs50_sql
+## Design Principles
+- Each table should be a collection of SINGLE entity
+    - Like employee table, employee_relationship table, team table
+- Each piece of data should be stored in SINGLE location
+    - Relationship table
+    - refer with unique id
 
 ## flat-file database
 * csv
@@ -48,6 +54,41 @@ wget https://raw.githubusercontent.com/MainakRepositor/Datasets/refs/heads/maste
 
 .mode csv
 .import Pokemon.csv pokemon
+```
+### CREATE table
+```sql
+-- CREATE TABLE table_name (
+--     column1 datatype constraint,
+--     column2 datatype constraint,
+--     column3 datatype constraint,
+--     ....
+-- );
+-- CONSTRAINT
+-- NOT NULL - Ensures that a column cannot have a NULL value
+-- UNIQUE - Ensures that all values in a column are different
+-- PRIMARY KEY - A combination of a NOT NULL and UNIQUE. Uniquely identifies each row in a table
+-- FOREIGN KEY - Prevents actions that would destroy links between tables
+-- CHECK - Ensures that the values in a column satisfies a specific condition
+-- DEFAULT - Sets a default value for a column if no value is specified
+-- CREATE INDEX - Used to create and retrieve data from the database very quickly
+
+CREATE TABLE friend("id" INTEGER NOT NULL UNIQUE, "first_name" TEXT NOT NULL, "last_name" TEXT NOT NULL, PRIMARY KEY("id"));
+
+-- PRIMARY KEY must be UNIQUE so not needed to specify again
+CREATE TABLE friend("id" INTEGER NOT NULL, "first_name" TEXT NOT NULL, "last_name" TEXT NOT NULL, PRIMARY KEY("id"));
+```
+### ALTER table
+```sql
+-- ALTER TABLE table_name
+-- ADD/DROP/RENAME/ALTER/MODIFY column_name datatype;
+
+ALTER TABLE friend MODIFY id UNIQUE;
+```
+### INSERT into table
+```sql
+-- INSERT INTO table (column, ...) VALUES(value, ...);
+INSERT INTO friend("id", "first_name", "last_name") VALUES(1, 'sharmila', 'A');
+INSERT INTO friend("first_name","last_name") VALUES('Munusamy', 'M' );
 ```
 ```sql
 CREATE TABLE IF NOT EXISTS "pokemon"(
@@ -124,3 +165,62 @@ UPDATE pokemon SET "Name" = 'Pikachu' WHERE "Name" = 'Suriya';
 ```
 
 * NULL -> no value there
+
+
+## Entity Relationship(ER) diagram
+- one to one relationship
+- one to many relatioship
+- many to many relationship 
+
+
+## datatypes
+- BLOB
+- INTEGER
+- NUMERIC
+- REAL
+- TEXT
+---
+- NOT NULL
+- UNIQUE
+---
+- PRIMARY KEY
+- FOREIGN KEY
+---
+- JOIN
+    - INNER JOIN
+    - OUTER JOIN
+---
+```sql
+SELECT show_id FROM ratings WHERE rating >= 6.0 LIMIT 10;
+SELECT * FROM shows WHERE id IN (SELECT show_id FROM ratings WHERE rating >= 6.0) LIMIT 10;
+SELECT * FROM shows WHERE tconst in (SELECT "tconst" FROM ratings WHERE "averageRating" >= 6.0 ) LIMIT 10;
+```
+
+```sql
+SELECT * FROM show JOIN rating ON show.id = rating.show_id; -- duplicate id will also populate
+SELECT "primaryTitle","averageRating" FROM shows JOIN ratings ON shows.tconst = ratings.tconst LIMIT 10;
+SELECT "primaryTitle","averageRating" FROM shows JOIN ratings ON shows.tconst = ratings.tconst WHERE "averageRating">6.0 LIMIT 10;
+
+SELECT  "primaryTitle","averageRating" FROM shows, ratings WHERE shows.tconst = ratings.tconst LIMIT 10;  -- same join but with different approach
+```
+
+## index - B tree
+```sql
+.timer ON
+
+-- CREATE INDEX name ON table (column, ...);
+CREATE INDEX title_index ON shows (primaryTitle);
+```
+
+## race conditions
+to avoid it we have some stuff
+
+- BEGIN TRANSACTION
+- COMMIT
+- ROLLBACK
+---
+
+## SQL injection attacks
+- never trust user input
+- assume worst when it comes to user input
+
