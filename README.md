@@ -1,46 +1,68 @@
 # cs50_sql
-## Design Principles
-- Each table should be a collection of SINGLE entity
-    - Like employee table, employee_relationship table, team table
-- Each piece of data should be stored in SINGLE location
-    - Relationship table
-    - refer with unique id
 
-## flat-file database
-* csv
+> A concise reference and tutorial for SQL (with SQLite) and flat-file databases.  
+> This document covers design principles, SQL basics, practical code examples, and tips for safe and effective database use.
+
+---
+
+**Table of Contents**
+- [Design Principles](#design-principles)
+- [Flat-file Database (CSV)](#flat-file-database-csv)
+- [Relational Database (SQL with SQLite)](#relational-database-sql-with-sqlite)
+  - [CRUD Operations](#crud-operations)
+  - [Using `sqlite3`](#using-sqlite3)
+  - [CREATE TABLE](#create-table)
+  - [ALTER TABLE](#alter-table)
+  - [INSERT INTO](#insert-into)
+  - [SELECT Queries and Functions](#select-queries-and-functions)
+  - [DELETE](#delete)
+  - [UPDATE](#update)
+- [Entity Relationship (ER) Diagrams](#entity-relationship-er-diagrams)
+- [SQL Data Types & Constraints](#sql-data-types--constraints)
+- [JOINS](#joins)
+- [Indexes](#indexes)
+- [Transactions & Race Conditions](#transactions--race-conditions)
+- [SQL Injection Attacks](#sql-injection-attacks)
+- [Best Practices](#best-practices)
+
+---
+
+## Design Principles
+- Each table should represent a single entity
+    - (e.g., `employee`, `employee_relationship`, `team`)
+- Each piece of data should be stored in a single location
+    - Use relationship tables and refer with unique IDs
+
+## Flat-file Database (CSV)
 ```py
 import csv
 
 with open("filename.csv", "r") as file:
     reader = csv.reader(file)
-    for i in reader:
-        print(i[0])
+    for row in reader:
+        print(row[0])
 
-
-########################
-
+# Reading with DictReader
 import csv
 
 with open("filename.csv", "r") as file:
     reader = csv.DictReader(file)
-    for i in reader:
-        print(i["language"])
+    for row in reader:
+        print(row["language"])
 ```
 
-## relational Database
-* SQL
+## Relational Database (SQL with SQLite)
 
-SQL: \
-CRUD
+### CRUD Operations
 
-C -> Create, Insert\
-R -> Read --> Select \
-U -> Update \
-D -> Delete, Drop 
+- **C**reate (INSERT)
+- **R**ead (SELECT)
+- **U**pdate (UPDATE)
+- **D**elete (DELETE, DROP)
 
-sqlite3 
+### Using `sqlite3`
 ```sh
-# sqlite3 <filename>
+# Start SQLite CLI with a database file
 sqlite3 favorites.db
 
 .mode csv
@@ -49,162 +71,168 @@ sqlite3 favorites.db
 
 .schema
 
-
+# Download example data
 wget https://raw.githubusercontent.com/MainakRepositor/Datasets/refs/heads/master/Pokemon.csv
 
 .mode csv
 .import Pokemon.csv pokemon
 ```
-### CREATE table
+
+### CREATE TABLE
 ```sql
--- CREATE TABLE table_name (
---     column1 datatype constraint,
---     column2 datatype constraint,
---     column3 datatype constraint,
---     ....
--- );
--- CONSTRAINT
--- NOT NULL - Ensures that a column cannot have a NULL value
--- UNIQUE - Ensures that all values in a column are different
--- PRIMARY KEY - A combination of a NOT NULL and UNIQUE. Uniquely identifies each row in a table
--- FOREIGN KEY - Prevents actions that would destroy links between tables
--- CHECK - Ensures that the values in a column satisfies a specific condition
--- DEFAULT - Sets a default value for a column if no value is specified
--- CREATE INDEX - Used to create and retrieve data from the database very quickly
+-- CREATE TABLE syntax
+CREATE TABLE table_name (
+    column1 datatype constraint,
+    column2 datatype constraint,
+    ...
+);
 
-CREATE TABLE friend("id" INTEGER NOT NULL UNIQUE, "first_name" TEXT NOT NULL, "last_name" TEXT NOT NULL, PRIMARY KEY("id"));
+-- Common constraints:
+-- NOT NULL      Ensures column cannot be NULL
+-- UNIQUE        Ensures all values in a column are unique
+-- PRIMARY KEY   Unique identifier for rows (implies NOT NULL & UNIQUE)
+-- FOREIGN KEY   Maintains referential integrity
+-- CHECK         Ensures values satisfy a specific condition
+-- DEFAULT       Sets a default value for a column
+-- CREATE INDEX  Improves data retrieval speed
 
--- PRIMARY KEY must be UNIQUE so not needed to specify again
-CREATE TABLE friend("id" INTEGER NOT NULL, "first_name" TEXT NOT NULL, "last_name" TEXT NOT NULL, PRIMARY KEY("id"));
+-- Example:
+CREATE TABLE friend (
+    id INTEGER NOT NULL UNIQUE,
+    first_name TEXT NOT NULL,
+    last_name TEXT NOT NULL,
+    PRIMARY KEY(id)
+);
+
+-- PRIMARY KEY must be UNIQUE (no need to specify UNIQUE separately)
+CREATE TABLE friend (
+    id INTEGER NOT NULL,
+    first_name TEXT NOT NULL,
+    last_name TEXT NOT NULL,
+    PRIMARY KEY(id)
+);
 ```
-### ALTER table
+
+### ALTER TABLE
 ```sql
 -- ALTER TABLE table_name
--- ADD/DROP/RENAME/ALTER/MODIFY column_name datatype;
+-- ADD/DROP/RENAME/MODIFY column_name datatype;
 
 ALTER TABLE friend MODIFY id UNIQUE;
 ```
-### INSERT into table
-```sql
--- INSERT INTO table (column, ...) VALUES(value, ...);
-INSERT INTO friend("id", "first_name", "last_name") VALUES(1, 'sharmila', 'A');
-INSERT INTO friend("first_name","last_name") VALUES('Munusamy', 'M' );
-```
-```sql
-CREATE TABLE IF NOT EXISTS "pokemon"(
-"#" TEXT, "Name" TEXT, "Type 1" TEXT, "Type 2" TEXT,
- "Total" TEXT, "HP" TEXT, "Attack" TEXT, "Defense" TEXT,
- "Sp. Atk" TEXT, "Sp. Def" TEXT, "Speed" TEXT, "Generation" TEXT,
- "Legendary" TEXT);
 
+### INSERT INTO
+```sql
+-- INSERT INTO table (column, ...) VALUES (value, ...);
+INSERT INTO friend (id, first_name, last_name) VALUES (1, 'Sharmila', 'A');
+INSERT INTO friend (first_name, last_name) VALUES ('Munusamy', 'M');
 ```
 
 ```sql
-SELECT * from pokemon;
+CREATE TABLE IF NOT EXISTS pokemon (
+    "#" TEXT, "Name" TEXT, "Type 1" TEXT, "Type 2" TEXT,
+    "Total" TEXT, "HP" TEXT, "Attack" TEXT, "Defense" TEXT,
+    "Sp. Atk" TEXT, "Sp. Def" TEXT, "Speed" TEXT, "Generation" TEXT,
+    "Legendary" TEXT
+);
+```
+
+### SELECT Queries and Functions
+```sql
+SELECT * FROM pokemon;
 .mode table
-SELECT "Name" from pokemon;
-SELECT COUNT(*) from pokemon; -- count of rows
-SELECT DISTINCT "Type 1" from pokemon; -- unique elements
-SELECT count(DISTINCT "Type 2") from pokemon; -- count of distinct type 2(column)
--- some additional functions
--- AVG
--- COUNT
--- DISTINCT
--- LOWER
--- MAX 
--- MIN
--- UPPER
+SELECT "Name" FROM pokemon;
+SELECT COUNT(*) FROM pokemon; -- count of rows
+SELECT DISTINCT "Type 1" FROM pokemon; -- unique elements
+SELECT COUNT(DISTINCT "Type 2") FROM pokemon; -- count of distinct type 2
 
--- some more
--- GTOUP BY
--- LIKE
--- LIMIT
--- ORDER BY
--- WHERE
+-- Functions:
+-- AVG, COUNT, DISTINCT, LOWER, MAX, MIN, UPPER
 
--- How many water type 1 pokemon are there
+-- GROUP BY, LIKE, LIMIT, ORDER BY, WHERE
+
+-- How many Water type1 Pokémon?
 SELECT COUNT(*) FROM pokemon WHERE "Type 1" = "Water";
--- How many water type 1 nd poison type 2 pokemon are there
+
+-- How many Water type1 and Poison type2 Pokémon?
 SELECT COUNT(*) FROM pokemon WHERE "Type 1" = "Water" AND "Type 2" = "Poison";
 
--- how many are actually water type pokemon like water can be present in any of type 1 or type 2
+-- How many are actually Water type Pokémon (type1 or type2)?
 SELECT COUNT(*) FROM pokemon WHERE "Type 1" = "Water" OR "Type 2" = "Water";
 
--- how many pokemon are type 1 - water or grass and type 2 water
+-- How many Pokémon are type1 Bug and type2 Grass or Poison?
 SELECT COUNT(*) FROM pokemon WHERE "Type 1" = "Bug" AND ("Type 2" = "Grass" OR "Type 2" = "Poison");
--- LIKE keyword - 
-SELECT COUNT(*) FROM pokemon WHERE language = 'C' AND problem LIKE 'Hello, %'; -- in regex we use * here it is %
 
--- Group By
+-- LIKE keyword (similar to * in regex, use % in SQL)
+SELECT COUNT(*) FROM pokemon WHERE language = 'C' AND problem LIKE 'Hello, %';
+
+-- GROUP BY
 SELECT "Type 1", COUNT(*) FROM pokemon GROUP BY "Type 1";
 
--- ORDER BY <column name>
+-- ORDER BY
 SELECT "Type 1", COUNT(*) FROM pokemon GROUP BY "Type 1" ORDER BY COUNT(*);
 
--- order by desc
+-- ORDER BY DESC
 SELECT "Type 1", COUNT(*) FROM pokemon GROUP BY "Type 1" ORDER BY COUNT(*) DESC;
 
--- alias(rename) column name
+-- Alias (rename) column
 SELECT "Type 1", COUNT(*) as n FROM pokemon GROUP BY "Type 1" ORDER BY n DESC;
 
--- LIMIT top 5 data
+-- LIMIT (top 5)
 SELECT "Type 1", COUNT(*) as n FROM pokemon GROUP BY "Type 1" ORDER BY n DESC LIMIT 5;
-
--- INSERT INTO
-INSERT INTO table (column, ...) VALUES(value, ...);
-
-INSERT INTO pokemon ("Name","Type 1","Type 2","Total","HP","Attack","Defense","Sp. Atk","Sp. Def","Speed","Generation","Legendary") VALUES('Dragon','Grass','Poison',318,45,49,49,65,65,45,1,'False');
-
--- DELETE  --------> be carful and mindful of what you are deleting
-DELETE FROM pokemon WHERE "#" IS NULL;
-
--- UPDATE
-UPDATE table SET column = value WHERE condition;
-UPDATE pokemon SET "Name" = 'Suriya' WHERE "Name" = 'Pikachu'; -- be careful with single and double quote key should always be double quote and value should be single quote.
-UPDATE pokemon SET "Name" = 'Pikachu' WHERE "Name" = 'Suriya';
 ```
 
-* NULL -> no value there
+### DELETE
+```sql
+-- DELETE (be careful and mindful of what you are deleting!)
+DELETE FROM pokemon WHERE "#" IS NULL;
+```
 
+### UPDATE
+```sql
+-- UPDATE table SET column = value WHERE condition;
+UPDATE pokemon SET "Name" = 'Suriya' WHERE "Name" = 'Pikachu';
+UPDATE pokemon SET "Name" = 'Pikachu' WHERE "Name" = 'Suriya';
 
-## Entity Relationship(ER) diagram
-- one to one relationship
-- one to many relatioship
-- many to many relationship 
+-- Note: Use double quotes for keys, single quotes for values.
+```
 
+*NULL* → no value present
 
-## datatypes
-- BLOB
-- INTEGER
-- NUMERIC
-- REAL
-- TEXT
----
-- NOT NULL
-- UNIQUE
----
-- PRIMARY KEY
-- FOREIGN KEY
----
-- JOIN
-    - INNER JOIN
-    - OUTER JOIN
----
+## Entity Relationship (ER) Diagrams
+- One-to-one relationship
+- One-to-many relationship
+- Many-to-many relationship
+
+*Tip: Use tools like [dbdiagram.io](https://dbdiagram.io/) or [draw.io](https://draw.io) to visualize ER diagrams.*
+
+## SQL Data Types & Constraints
+
+- Data Types: BLOB, INTEGER, NUMERIC, REAL, TEXT
+- Constraints: NOT NULL, UNIQUE, PRIMARY KEY, FOREIGN KEY
+
+## JOINS
+
+- INNER JOIN
+- OUTER JOIN
+
 ```sql
 SELECT show_id FROM ratings WHERE rating >= 6.0 LIMIT 10;
 SELECT * FROM shows WHERE id IN (SELECT show_id FROM ratings WHERE rating >= 6.0) LIMIT 10;
-SELECT * FROM shows WHERE tconst in (SELECT "tconst" FROM ratings WHERE "averageRating" >= 6.0 ) LIMIT 10;
+SELECT * FROM shows WHERE tconst IN (SELECT tconst FROM ratings WHERE averageRating >= 6.0) LIMIT 10;
+
+SELECT * FROM show JOIN rating ON show.id = rating.show_id; -- duplicate id will also appear
+SELECT primaryTitle, averageRating FROM shows JOIN ratings ON shows.tconst = ratings.tconst LIMIT 10;
+SELECT primaryTitle, averageRating FROM shows JOIN ratings ON shows.tconst = ratings.tconst WHERE averageRating > 6.0 LIMIT 10;
+
+-- Alternate join syntax:
+SELECT primaryTitle, averageRating FROM shows, ratings WHERE shows.tconst = ratings.tconst LIMIT 10;
 ```
 
-```sql
-SELECT * FROM show JOIN rating ON show.id = rating.show_id; -- duplicate id will also populate
-SELECT "primaryTitle","averageRating" FROM shows JOIN ratings ON shows.tconst = ratings.tconst LIMIT 10;
-SELECT "primaryTitle","averageRating" FROM shows JOIN ratings ON shows.tconst = ratings.tconst WHERE "averageRating">6.0 LIMIT 10;
+## Indexes
 
-SELECT  "primaryTitle","averageRating" FROM shows, ratings WHERE shows.tconst = ratings.tconst LIMIT 10;  -- same join but with different approach
-```
+- SQLite uses B-tree indexes to speed up queries.
 
-## index - B tree
 ```sql
 .timer ON
 
@@ -212,15 +240,28 @@ SELECT  "primaryTitle","averageRating" FROM shows, ratings WHERE shows.tconst = 
 CREATE INDEX title_index ON shows (primaryTitle);
 ```
 
-## race conditions
-to avoid it we have some stuff
+## Transactions & Race Conditions
 
-- BEGIN TRANSACTION
-- COMMIT
-- ROLLBACK
+To avoid race conditions:
+- Use transactions: `BEGIN TRANSACTION`, `COMMIT`, `ROLLBACK`
+
+## SQL Injection Attacks
+
+- Never trust user input.
+- Always sanitize and use parameterized queries where possible.
+- Assume the worst with user input.
+
+## Best Practices
+
+- Use parameterized queries to prevent SQL injection.
+- Always back up your database before running destructive operations.
+- Normalize data to reduce duplication.
+- Use meaningful table and column names.
+- Keep your schema documentation up to date.
+- Use foreign keys to maintain referential integrity.
+- Prefer explicit column lists in `SELECT` and `INSERT` for clarity.
+- Use transactions for batch updates/inserts/deletes.
+
 ---
 
-## SQL injection attacks
-- never trust user input
-- assume worst when it comes to user input
-
+*Last updated: 2025-06-10*
